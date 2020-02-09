@@ -87,4 +87,14 @@ public class RedisTest {
         jedis.disconnect();
     }
 
+    /**
+     * 使用Java程序实现消息的发布与订阅，需要继承JedisPubSub类
+     */
+    @Test
+    public void testMessage(){
+        Jedis jedis = new Jedis("tosin-01", 6379);
+//        jedis.subscribe(new MyListener(), "channel");
+        jedis.psubscribe(new MyListener(), "channel*");
+    }
+
 }
