@@ -2,6 +2,7 @@ package com.tosin.redis;
 
 import org.junit.Test;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Transaction;
 
 public class RedisTest {
     @Test
@@ -26,7 +27,64 @@ public class RedisTest {
         jedis.incr("age");
         System.out.println(jedis.get("name")+"-"+jedis.get("age")+"-"+jedis.get("qq"));
 
+        jedis.disconnect();
+    }
+
+    /**
+     * 事务
+     */
+    @Test
+    public void testTransaction(){
+        Jedis jedis = new Jedis("tosin-01", 6379);
+
+        jedis.set("tom", "1000");
+        jedis.set("mike", "1000");
+        Transaction transaction = null;
+        try {
+            //开启事务
+            transaction = jedis.multi();
+
+            transaction.decrBy("tom", 100);
+            transaction.incrBy("mike", 100);
+            //提交事务
+            transaction.exec();
+        } catch (Exception e) {
+            e.printStackTrace();
+            //回滚事务
+            transaction.discard();
+        }
 
         jedis.disconnect();
     }
+
+    /**
+     * 锁
+     */
+    @Test
+    public void testLock(){
+        Jedis jedis = new Jedis("tosin-01", 6379);
+
+        jedis.set("tom", "1000");
+        jedis.set("ticket", "1");
+        //对ticket加锁，如果在事务执行过程中，该值有变化，则抛出异常
+        jedis.watch("ticket");
+        Transaction transaction = null;
+        try {
+            //开启事务
+            transaction = jedis.multi();
+
+            transaction.decr("ticket");
+            Thread.sleep(5000);
+            transaction.decrBy("tom", 100);
+            //提交事务
+            transaction.exec();
+        } catch (Exception e) {
+            e.printStackTrace();
+            //回滚事务
+            transaction.discard();
+        }
+
+        jedis.disconnect();
+    }
+
 }
